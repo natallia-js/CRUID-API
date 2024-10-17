@@ -1,0 +1,34 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "rootDir": "src",
+        "paths": {
+            "@root": ["src/*"],
+            "@classes/*": ["src/classes/*"],
+            "@processes/*": ["src/processes/*"]
+        },        
+        "forceConsistentCasingInFileNames": true,
+        "allowSyntheticDefaultImports": true,
+        "esModuleInterop": true,
+        "lib": ["ESNext"],
+        "module": "ESNext",
+        "moduleResolution": "Node",
+        "strictNullChecks": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "outDir": "./dist",
+        "removeComments": true,
+        "resolveJsonModule": true,
+        "skipLibCheck": true,
+        "sourceMap": true,
+        "strict": true,
+        "strictPropertyInitialization": false,
+        "target": "ESNext"
+    },
+    "ts-node": {
+        "esm": true
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules"]
+}
+  
