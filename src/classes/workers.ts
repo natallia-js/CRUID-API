@@ -11,33 +11,38 @@ export type WorkerObject = {
 }
 
 export class Workers {
-    #workers: WorkerObject[];
+    private workers: WorkerObject[];
+
     constructor() {
-        this.#workers = [];
+        this.workers = [];
     }
-    getWorkerObjectByIndex(index: number) {
-        if (index < 0 || index > this.#workers.length - 1)
+
+    public getWorkerObjectByIndex(index: number) {
+        if (index < 0 || index > this.workers.length - 1)
             return null;
-        return this.#workers[index];
+        return this.workers[index];
     }
-    getWorkersNumber() {
-        return this.#workers.length;
+
+    public getWorkersNumber() {
+        return this.workers.length;
     }
-    addWorker(worker: Worker, workerEnv: WorkerEnv) {
-        this.#workers.push({
+
+    public addWorker(worker: Worker, workerEnv: WorkerEnv) {
+        this.workers.push({
             worker,
             workerEnv,
         });
     }
-    recreateWorker(workerPid: number | undefined, createWorkerCallback: (env?: any) => Worker) {
+
+    public recreateWorker(workerPid: number | undefined, createWorkerCallback: (env?: any) => Worker) {
         if (!workerPid) return;
-        const workerIndex = this.#workers.findIndex(workerData => workerData.worker.process.pid === workerPid);
+        const workerIndex = this.workers.findIndex(workerData => workerData.worker.process.pid === workerPid);
         if (workerIndex >= 0) {
-            if (this.#workers[workerIndex]) {
-                const newWorker = createWorkerCallback(this.#workers[workerIndex].workerEnv);
-                this.addWorker(newWorker, this.#workers[workerIndex].workerEnv);
+            if (this.workers[workerIndex]) {
+                const newWorker = createWorkerCallback(this.workers[workerIndex].workerEnv);
+                this.addWorker(newWorker, this.workers[workerIndex].workerEnv);
             }
-            this.#workers.splice(workerIndex, 1);
+            this.workers.splice(workerIndex, 1);
         }
     }
 }

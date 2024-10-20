@@ -3,7 +3,6 @@
         "baseUrl": ".",
         "rootDir": "src",
         "paths": {
-            "@root": ["src/*"],
             "@classes/*": ["src/classes/*"],
             "@processes/*": ["src/processes/*"]
         },        

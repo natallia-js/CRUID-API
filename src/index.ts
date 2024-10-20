@@ -4,7 +4,7 @@ const inClusterMode = Boolean(process.env.MULTI);
 
 if (!inClusterMode) {
     console.log(`Starting the application not in cluster mode`);
-    //const BasePORT = process.env.PORT;
+    await import('@processes/worker');
 } else {
     if (cluster.isPrimary) {
         await import('@processes/main');

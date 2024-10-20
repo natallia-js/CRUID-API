@@ -1,4 +1,6 @@
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
+import Lock from '@classes/lock';
+import { UserError, USER_ERROR_CODES } from './errors';
 
 export interface UserData {
     username?: string | undefined,
@@ -6,79 +8,126 @@ export interface UserData {
     hobbies?: string[] | undefined,
 }
 
-interface IdentifiedUser extends UserData {
+export interface IdentifiedUser extends UserData {
     id: string,
 }
 
 export class Users {
-    private users: IdentifiedUser[];
-
-    constructor() {
-        this.users = [];
-    }
+    private static _users: IdentifiedUser[] = [];
+    private static _shared: boolean = false;
+    private static _lock: Lock = new Lock();
 
     // ------- PRIVATE
 
-    private checkUserId(userId: string) {
-        if (!uuidValidate(userId))
-            throw new Error('userId is not valid');
-    }
-
-    private checkUserData(user: UserData) {
+    private static checkUserData(user: UserData) {
         if (!user)
-            throw new Error('Cannot add undefined user');
+            throw new UserError(USER_ERROR_CODES.wrongUserData, 'User object is undefined');
         if (!user.username?.length)
-            throw new Error('Cannot add user: userUsername is not defined');
+            throw new UserError(USER_ERROR_CODES.wrongUserData, 'Username is not defined');
         if (!user.hobbies?.length)
-            throw new Error('Cannot add user: user hobbies are not defined');
+            throw new UserError(USER_ERROR_CODES.wrongUserData, 'User hobbies are not defined');
         if (!user.age || user.age < 0)
-            throw new Error('Cannot add user: user age is not defined or wrong (< 0)');
+            throw new UserError(USER_ERROR_CODES.wrongUserData, 'User age is not defined or wrong (< 0)');
     }
 
-    private getUserIndex(userId: string) {
-        this.checkUserId(userId);
-        const userIndex = this.users.findIndex(user => user.id === userId);
+    private static getUserIndex(userId: string) {
+        Users.checkUserId(userId);
+        const userIndex = Users._users.findIndex(user => user.id === userId);
         if (userIndex < 0)
-            throw new Error(`User with id = ${userId} not found`);
+            throw new UserError(USER_ERROR_CODES.userNotFound, `User with id = ${userId} not found`);
         return userIndex;
     }
 
     // ------- PUBLIC
 
-    public addUser(user: UserData): string {
-        this.checkUserData(user);
-        const userId: string = uuidv4();
-        this.users.push({
-            id: userId,
-            ...user,
-        });
-        return userId;
+    public static setShared() {
+        Users._shared = true;
     }
 
-    public modUser(userId: string, user: UserData) {
-        const userIndex = this.getUserIndex(userId);
-        const newUserInfo = {
-            ...this.users[userIndex],
-            ...user,
-        };
-        this.checkUserData(newUserInfo);
-        this.users[userIndex] = newUserInfo;
+    public static checkUserId(userId: string) {
+        if (!uuidValidate(userId))
+            throw new UserError(USER_ERROR_CODES.wrongUserData, 'User ID is not valid');
     }
 
-    public delUser(userId: string) {
-        const userIndex = this.getUserIndex(userId);
-        this.users.splice(userIndex, 1);
+    public static async addUser(user: UserData): Promise<IdentifiedUser> {
+        if (Users._shared)
+            await Users._lock.acquire();
+        try {
+            Users.checkUserData(user);
+            const userId: string = uuidv4();
+            const newUser = {
+                id: userId,
+                ...user,
+            };
+            Users._users.push(newUser);
+            return newUser;
+        } finally {
+            if (Users._shared)
+                Users._lock.release();
+        }
     }
 
-    public getUsersNumber() {
-        return this.users.length;
+    public static async modUser(userId: string, user: UserData): Promise<IdentifiedUser> {
+        if (Users._shared)
+            await Users._lock.acquire();
+        try {
+            const userIndex = Users.getUserIndex(userId);
+            const newUserInfo = {
+                ...Users._users[userIndex],
+                ...user,
+            };
+            Users.checkUserData(newUserInfo);
+            Users._users[userIndex] = newUserInfo;
+            return newUserInfo;
+        } finally {
+            if (Users._shared)
+                Users._lock.release();
+        }
     }
 
-    public getAllUsers() {
-        return this.users;
+    public static async delUser(userId: string) {
+        if (Users._shared)
+            await Users._lock.acquire();
+        try {
+            const userIndex = Users.getUserIndex(userId);
+            Users._users.splice(userIndex, 1);
+        } finally {
+            if (Users._shared)
+                Users._lock.release();
+        }
     }
 
-    public getUserById(userId: string): IdentifiedUser | undefined {
-        return this.users.find(user => user.id === userId);
+    public static async getUsersNumber(): Promise<number> {
+        if (Users._shared)
+            await Users._lock.acquire();
+        try {
+            return Users._users.length;
+        } finally {
+            if (Users._shared)
+                Users._lock.release();
+        }
+    }
+
+    public static async getAllUsers(): Promise<IdentifiedUser[]> {
+        if (Users._shared)
+            await Users._lock.acquire();
+        try {
+            return Users._users;
+        } finally {
+            if (Users._shared)
+                Users._lock.release();
+        }
+    }
+
+    public static async getUserById(userId: string): Promise<IdentifiedUser> {
+        if (Users._shared)
+            await Users._lock.acquire();
+        try {
+            const userIndex = Users.getUserIndex(userId);
+            return Users._users[userIndex];
+        } finally {
+            if (Users._shared)
+                Users._lock.release();
+        }
     }
 }

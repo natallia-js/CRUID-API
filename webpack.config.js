@@ -12,7 +12,6 @@ const config = {
     resolve: {
         extensions: ['.ts'],
         alias: {
-            '@root': path.resolve(import.meta.dirname, 'src'),
             '@classes': path.resolve(import.meta.dirname, 'src/classes'),
             '@processes': path.resolve(import.meta.dirname, 'src/processes')
         },
