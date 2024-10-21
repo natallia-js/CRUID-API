@@ -3,7 +3,7 @@ import cluster, { Worker } from 'node:cluster';
 import http, { IncomingMessage, ServerResponse } from 'node:http';
 import { WorkerEnv, Workers } from '@classes/workers';
 import { Users } from '@classes/users';
-import { ActionData } from '@processes/worker/routing/eventsCatcher';
+import { ActionData } from '@processes/worker/communication-with-master/sendUserMessageToMaster';
 import UserActions from '@processes/worker/routing/userActions';
 
 Users.setShared();
@@ -29,7 +29,6 @@ cluster.on('exit', (worker, code, signal) => {
 });
 
 cluster.on('message', async (worker: Worker, message: string) => {
-    console.log('In main:', message)
     const messageObject: ActionData = JSON.parse(message);
     const response: ActionData = {
         actionId: messageObject.actionId,
@@ -40,23 +39,23 @@ cluster.on('message', async (worker: Worker, message: string) => {
     try {
         switch (messageObject.action) {
             case UserActions.addUser:
-                const newUser = await Users.addUser(messageObject.data);
-                response.data = newUser;
+                response.data = await Users.addUser(messageObject.data);
                 break;
             case UserActions.getAllUsers:
-                const allUsers = await Users.getAllUsers();
-                response.data = allUsers;
+                const data = await Users.getAllUsers();
+                response.data = data;
                 break;
             case UserActions.getUser:
-                const user = await Users.getUserById(messageObject.data);
-                response.data = user;
+                response.data = await Users.getUserById(messageObject.data);
                 break;
             case UserActions.modUser:
-                const modUser = await Users.modUser(messageObject.data.userId, messageObject.data.modUserData);
-                response.data = modUser;
+                response.data = await Users.modUser(messageObject.data.userId, messageObject.data.modUserData);
                 break;
             case UserActions.delUser:
                 await Users.delUser(messageObject.data);
+                break;
+            case UserActions.delAllUsers:
+                await Users.delAllUsers();
                 break;
             default:
                 break;
@@ -75,7 +74,11 @@ cluster.on('message', async (worker: Worker, message: string) => {
 let counter = 0;
 
 process.on('uncaughtException', (error: any) => {
-    console.log(error);
+    console.error('Uncaught Exception:', error);
+});
+
+process.on('unhandledRejection', (error: any) => {
+    console.error('Unhandled Rejection:', error);
 });
 
 // creating a load balancer
@@ -94,4 +97,6 @@ server.on('request', (req: IncomingMessage, res: ServerResponse) => {
     return res.end();
 });
 
-server.listen(PORT, function() { console.log(`Load balancer is listening on port ${PORT}`) });
+server.listen(PORT, function() {
+    console.log(`Load balancer is listening on port ${PORT}`);
+});

@@ -4,6 +4,7 @@ enum UserActions {
     addUser = 'addUser',
     modUser = 'modUser',
     delUser = 'delUser',
+    delAllUsers = 'delAllUsers',
 }
 
 export default UserActions;

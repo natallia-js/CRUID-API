@@ -1,7 +1,7 @@
 import { IncomingMessage, ServerResponse } from 'node:http';
 import getReqURLNormalized, { getReqRenormalized } from './getReqURLNormalized';
-import getParam from './getParam';
-import { NonExistingEndpointRequestError } from '../../../classes/errors';
+import getURLParam from './getURLParam';
+import { NonExistingEndpointRequestError } from '@classes/errors/routingErrors';
 import { EventEmitter } from 'node:events';
 import UserActions from './userActions';
 
@@ -15,19 +15,23 @@ function processPutRequest(
 
     if (reqUrl?.startsWith(baseUrl) && reqUrl !== baseUrl) {
         reqUrl = getReqRenormalized(reqUrl);
-        const userId = getParam(baseUrl, reqUrl);
+        const userId = getURLParam(baseUrl, reqUrl);
         let body = '';
         req.on('data', (chunk) => {
             body += chunk.toString();
         });
-        req.on('end', async () => {
-            const bodyData = JSON.parse(body);
-            eventEmitter.emit(UserActions.modUser, {
-                userId,
-                modUserData: bodyData,
-                reqMethod: req.method,
-                res,
-            });
+        req.on('end', () => {
+            try {
+                const bodyData = JSON.parse(body);
+                eventEmitter.emit(UserActions.modUser, {
+                    userId,
+                    modUserData: bodyData,
+                    reqMethod: req.method,
+                    res,
+                }, []);
+            } catch (error: any) {
+                req.destroy(error);
+            }
         });
     } else {
         throw new NonExistingEndpointRequestError();

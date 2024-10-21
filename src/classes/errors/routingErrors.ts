@@ -1,5 +1,6 @@
 export enum ROUTING_ERROR_CODES {
     requestToNonExistingEndpoint = -1,
+    requestMethodNotSupported = -2,
 }
 
 export class RoutingError extends Error {
@@ -16,18 +17,8 @@ export class NonExistingEndpointRequestError extends RoutingError {
     }
 }
 
-// ------------------
-
-export enum USER_ERROR_CODES {
-    userNotFound = -1,
-    wrongUserData = -2,
-}
-
-export class UserError extends Error {
-    public readonly errorCode: USER_ERROR_CODES;
-    constructor(errorCode: USER_ERROR_CODES, message: string) {
-        super(message);
-        this.errorCode = errorCode;
+export class RequestMethodNotSupportedError extends RoutingError {
+    constructor() {
+        super(ROUTING_ERROR_CODES.requestMethodNotSupported, 'Request method is not supported');
     }
 }
-

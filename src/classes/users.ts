@@ -1,6 +1,6 @@
 import { v4 as uuidv4, validate as uuidValidate } from 'uuid';
 import Lock from '@classes/lock';
-import { UserError, USER_ERROR_CODES } from './errors';
+import { UserError, USER_ERROR_CODES } from './errors/userErrors';
 
 export interface UserData {
     username?: string | undefined,
@@ -91,6 +91,17 @@ export class Users {
         try {
             const userIndex = Users.getUserIndex(userId);
             Users._users.splice(userIndex, 1);
+        } finally {
+            if (Users._shared)
+                Users._lock.release();
+        }
+    }
+
+    public static async delAllUsers() {
+        if (Users._shared)
+            await Users._lock.acquire();
+        try {
+            Users._users = [];
         } finally {
             if (Users._shared)
                 Users._lock.release();

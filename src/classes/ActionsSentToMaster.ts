@@ -23,9 +23,6 @@ class ActionsSentToMaster {
     getAction(actionId: string) {
         return this.data.find(el => el.actionId === actionId);
     }
-    getActionResponse(actionId: string) {
-        return this.data.find(el => el.actionId === actionId)?.res || null;
-    }
 }
 
 export default ActionsSentToMaster;
