@@ -1,35 +1,43 @@
-import { IncomingMessage, ServerResponse } from 'node:http';
-import getReqURLNormalized, { getReqRenormalized } from './getReqURLNormalized';
-import getURLParam from './getURLParam';
-import { NonExistingEndpointRequestError } from '@classes/errors/routingErrors';
-import { EventEmitter } from 'node:events';
-import UserActions from './userActions';
+import { IncomingMessage, ServerResponse } from "node:http";
+import getReqURLNormalized, { getReqRenormalized } from "./getReqURLNormalized";
+import getURLParam from "./getURLParam";
+import { NonExistingEndpointRequestError } from "@classes/errors/routingErrors";
+import { EventEmitter } from "node:events";
+import UserActions from "./userActions";
 
 function processGetRequest(
-    req: IncomingMessage,
-    res: ServerResponse,
-    baseUrl: string,
-    eventEmitter: EventEmitter
+  req: IncomingMessage,
+  res: ServerResponse,
+  baseUrl: string,
+  eventEmitter: EventEmitter,
 ) {
-    let reqUrl = getReqURLNormalized(req);
+  const reqUrl = getReqURLNormalized(req);
 
-    if (reqUrl?.startsWith(baseUrl)) {
-        if (reqUrl === baseUrl) {
-            eventEmitter.emit(UserActions.getAllUsers, {
-                reqMethod: req.method,
-                res,
-            }, []);
-        } else {
-            const userId = getURLParam(baseUrl, getReqRenormalized(reqUrl));
-            eventEmitter.emit(UserActions.getUser, {
-                userId,
-                reqMethod: req.method,
-                res,
-            }, []);
-        }
+  if (reqUrl?.startsWith(baseUrl)) {
+    if (reqUrl === baseUrl) {
+      eventEmitter.emit(
+        UserActions.getAllUsers,
+        {
+          reqMethod: req.method,
+          res,
+        },
+        [],
+      );
     } else {
-        throw new NonExistingEndpointRequestError();
+      const userId = getURLParam(baseUrl, getReqRenormalized(reqUrl));
+      eventEmitter.emit(
+        UserActions.getUser,
+        {
+          userId,
+          reqMethod: req.method,
+          res,
+        },
+        [],
+      );
     }
+  } else {
+    throw new NonExistingEndpointRequestError();
+  }
 }
 
 export default processGetRequest;
